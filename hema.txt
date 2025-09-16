@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chirply</title>
+  <style>
+    body {
+        background-image: url(purple.jpg);
+      font-family: Arial, sans-serif;
+      
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #b19cd9;
+    }
+
+    h2 {
+      text-align: center;
+      color: #6a0dad;
+    }
+
+    input, button, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #d3bdf0;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      background: #8e2de2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background: #6a0dad;
+    }
+
+    .tweet {
+      border: 1px solid #cfa9f1;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      background: #fdf8ff;
+    }
+
+    .comment {
+      margin-left: 20px;
+      padding-left: 10px;
+      border-left: 2px solid #a970e4;
+    }
+
+    .nav {
+      text-align: right;
+    }
+
+    .nav button {
+      background: #c2185b;
+      width: auto;
+    }
+
+    .meta {
+      font-size: 0.8em;
+      color: #6a0dad;
+    }
+
+    .profile-button {
+      color: #6a0dad;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      font-weight: bold;
+    }
+
+    .follow-btn {
+      background: #9c27b0;
+      color: white;
+      padding: 6px 12px;
+      margin-top: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .follow-btn:hover {
+      background: #6a0dad;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+
+  <script>
+    let currentUser = null;
+    const users = {};
+
+    function renderLogin() {
+      document.getElementById('app').innerHTML = `
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+        <p>New user? <button onclick="renderRegister()">Register</button></p>
+      `;
+    }
+
+    function renderRegister() {
+      document.getElementById('app').innerHTML = `
+        <h2>Register</h2>
+        <input type="text" id="newUsername" placeholder="Username" />
+        <input type="password" id="newPassword" placeholder="Password" />
+        <button onclick="register()">Register</button>
+        <p>Already have an account? <button onclick="renderLogin()">Login</button></p>
+      `;
+    }
+
+    function register() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      if (username && password && !users[username]) {
+        users[username] = {
+          password,
+          tweets: [],
+          followers: [],
+          following: []
+        };
+        alert("Registration successful!");
+        renderLogin();
+      } else {
+        alert("Invalid or already existing user.");
+      }
+    }
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (users[username] && users[username].password === password) {
+        currentUser = username;
+        loadFeed();
+      } else {
+        alert("Invalid credentials.");
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      renderLogin();
+    }
+
+    function postTweet() {
+      const text = document.getElementById('tweetText').value.trim();
+      if (text) {
+        users[currentUser].tweets.unshift({
+          text,
+          time: new Date().toLocaleString(),
+          likes: [],
+          comments: []
+        });
+        document.getElementById('tweetText').value = "";
+        loadFeed();
+      }
+    }
+
+    function loadFeed() {
+      const allTweets = [];
+      for (const user in users) {
+        users[user].tweets.forEach((tweet, index) => {
+          allTweets.push({ user, tweet, index });
+        });
+      }
+
+      allTweets.sort((a, b) => new Date(b.tweet.time) - new Date(a.tweet.time));
+
+      document.getElementById('app').innerHTML = `
+        <div class="nav">
+          <span>Logged in as <b>${currentUser}</b></span>
+          <button onclick="logout()">Logout</button>
+        </div>
+        <h2>Tweet Something</h2>
+        <textarea id="tweetText" placeholder="What's happening?"></textarea>
+        <button onclick="postTweet()">Post</button>
+        <h3>Feed</h3>
+        ${allTweets.map(({ user, tweet, index }) => `
+          <div class="tweet">
+            <div><button class="profile-button" onclick="viewProfile('${user}')">${user}</button></div>
+            <div>${tweet.text}</div>
+            <div class="meta">${tweet.time}</div>
+            <div>
+              <button onclick="likeTweet('${user}', ${index})">
+                ${tweet.likes.includes(currentUser) ? 'Unlike' : 'Like'} (${tweet.likes.length})
+              </button>
+            </div>
+            <div>
+              <input id="comment-${user}-${index}" placeholder="Add comment" />
+              <button onclick="addComment('${user}', ${index})">Comment</button>
+            </div>
+            <div>
+              ${tweet.comments.map(c => `
+                <div class="comment">
+                  <b>${c.user}:</b> ${c.text}
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function likeTweet(user, index) {
+      const tweet = users[user].tweets[index];
+      const i = tweet.likes.indexOf(currentUser);
+      if (i === -1) tweet.likes.push(currentUser);
+      else tweet.likes.splice(i, 1);
+      loadFeed();
+    }
+
+    function addComment(user, index) {
+      const inputId = `comment-${user}-${index}`;
+      const commentText = document.getElementById(inputId).value.trim();
+      if (commentText) {
+        users[user].tweets[index].comments.push({ user: currentUser, text: commentText });
+        loadFeed();
+      }
+    }
+
+    function viewProfile(user) {
+      const userObj = users[user];
+      const isFollowing = userObj.followers.includes(currentUser);
+      document.getElementById('app').innerHTML = `
+        <div class="nav">
+          <button onclick="loadFeed()">Back</button>
+          <button onclick="logout()">Logout</button>
+        </div>
+        <h2>${user}'s Profile</h2>
+        <div>Followers: ${userObj.followers.length}</div>
+        <div>Following: ${userObj.following.length}</div>
+        ${user !== currentUser ? `
+          <button class="follow-btn" onclick="${isFollowing ? `unfollow('${user}')` : `follow('${user}')`}">
+            ${isFollowing ? 'Unfollow' : 'Follow'}
+          </button>
+        ` : ''}
+        <h3>Tweets</h3>
+        ${userObj.tweets.map(tweet => `
+          <div class="tweet">
+            <div>${tweet.text}</div>
+            <div class="meta">${tweet.time}</div>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function follow(user) {
+      if (!users[user].followers.includes(currentUser)) {
+        users[user].followers.push(currentUser);
+        users[currentUser].following.push(user);
+      }
+      viewProfile(user);
+    }
+
+    function unfollow(user) {
+      users[user].followers = users[user].followers.filter(u => u !== currentUser);
+      users[currentUser].following = users[currentUser].following.filter(u => u !== user);
+      viewProfile(user);
+    }
+
+    renderLogin();
+  </script>
+</body>
+</html>
+
+const express = require('express');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const app = express();
+dotenv.config();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(__dirname));
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB error:', err));
+
+const userSchema = new mongoose.Schema({
+  name: String,
+  username: String,
+  password: String,
+  followers: [String],
+  following: [String]
+});
+const tweetSchema = new mongoose.Schema({
+  username: String,
+  content: String,
+  createdAt: { type: Date, default: Date.now },
+  likes: { type: Number, default: 0 },
+  replies: [{ username: String, content: String }]
+});
+
+const User = mongoose.model('User', userSchema);
+const Tweet = mongoose.model('Tweet', tweetSchema);
+
+function auth(req, res, next) {
+  try {
+    const decoded = jwt.verify(req.headers.authorization, 'secret');
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).send('Unauthorized');
+  }
+}
+
+app.post('/register', async (req, res) => {
+  const { name, username, password } = req.body;
+  const user = new User({ name, username, password });
+  await user.save();
+  res.send('Registered');
+});
+
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username, password });
+  if (!user) return res.status(400).send('Invalid');
+  const token = jwt.sign({ username }, 'secret');
+  res.json({ token, username });
+});
+
+app.post('/tweet', auth, async (req, res) => {
+  const tweet = new Tweet({ username: req.user.username, content: req.body.content });
+  await tweet.save();
+  res.send('Tweeted');
+});
+
+app.get('/tweets', auth, async (req, res) => {
+  const tweets = await Tweet.find().sort({ createdAt: -1 });
+  res.json(tweets);
+});
+
+app.post('/like/:id', auth, async (req, res) => {
+  await Tweet.findByIdAndUpdate(req.params.id, { $inc: { likes: 1 } });
+  res.send('Liked');
+});
+
+app.post('/reply/:id', auth, async (req, res) => {
+  await Tweet.findByIdAndUpdate(req.params.id, {
+    $push: { replies: { username: req.user.username, content: req.body.content } }
+  });
+  res.send('Replied');
+});
+
+app.post('/follow', auth, async (req, res) => {
+  const target = await User.findOne({ username: req.body.username });
+  if (!target) return res.status(404).send('User not found');
+  await User.updateOne({ username: req.user.username }, { $addToSet: { following: req.body.username } });
+  await User.updateOne({ username: req.body.username }, { $addToSet: { followers: req.user.username } });
+  res.send('Followed');
+});
+
+app.post('/unfollow', auth, async (req, res) => {
+  await User.updateOne({ username: req.user.username }, { $pull: { following: req.body.username } });
+  await User.updateOne({ username: req.body.username }, { $pull: { followers: req.user.username } });
+  res.send('Unfollowed');
+});
+
+app.get('/profile', auth, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username });
+  res.json(user);
+});
+
+app.listen(5000, () => console.log('🚀 Server running on port 5000'));
+
+
+
+

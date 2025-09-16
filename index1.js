@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Time-Based Greeting</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(120deg, #89f7fe, #66a6ff);
+      animation: bgPulse 10s infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      0% {
+        background: linear-gradient(120deg, #89f7fe, #66a6ff);
+      }
+      100% {
+        background: linear-gradient(120deg, #ffecd2, #fcb69f);
+      }
+    }
+
+    .greeting-box {
+      background: #fff;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+      animation: popIn 1s ease-out;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    input {
+      width: 80%;
+      padding: 10px;
+      margin-top: 20px;
+      border: 2px solid #66a6ff;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #66a6ff;
+      color: white;
+      border: none;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #4a90e2;
+    }
+
+    .animated-text {
+      font-size: 2rem;
+      animation: fadeIn 2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="greeting-box">
+    <h1 id="greeting" class="animated-text">👋 Hello!</h1>
+    <input type="text" id="nameInput" placeholder="Enter your name" />
+    <button onclick="showGreeting()">Greet Me</button>
+  </div>
+
+  <script>
+    function showGreeting() {
+      const name = document.getElementById("nameInput").value.trim();
+      const greetingElement = document.getElementById("greeting");
+
+      let hour = new Date().getHours();
+      let greeting = "";
+      let emoji = "";
+
+      if (hour >= 5 && hour < 12) {
+        greeting = "Good Morning";
+        emoji = "🌞";
+      } else if (hour >= 12 && hour < 17) {
+        greeting = "Good Afternoon";
+        emoji = "☀️";
+      } else if (hour >= 17 && hour < 21) {
+        greeting = "Good Evening";
+        emoji = "🌇";
+      } else {
+        greeting = "Good Night";
+        emoji = "🌙";
+      }
+
+      if (name) {
+        greetingElement.textContent = `${greeting}, ${name}! ${emoji}`;
+      } else {
+        greetingElement.textContent = `${greeting}! ${emoji}`;
+      }
+
+      greetingElement.classList.add("animated-text");
+    }
+  </script>
+</body>
+</html>
